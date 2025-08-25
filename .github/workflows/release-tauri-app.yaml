@@ -17,6 +17,7 @@ jobs:
       - id: step1
         uses: ncipollo/release-action@v1
         with:
+          tag: v0.9.1
           name: "Volla Messages ${{ github.ref_name }}"
           body: |
             See the assets to download this version and install.
