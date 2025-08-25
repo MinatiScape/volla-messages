@@ -1,4 +1,5 @@
 name: "release-tauri-app"
+
 on:
   push:
     tags:
@@ -122,7 +123,38 @@ jobs:
             label: rich
     steps:
       - uses: actions/checkout@v3
-      # (rest of your android steps unchanged)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Copy tauri config for android
+        run: |
+          cp -f src-tauri/tauri.android.conf.json src-tauri/tauri.conf.json
+
+      - name: Build Android App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.releaseId }}
+          args: --verbose --features ${{ matrix.feature }}
 
   release-tauri-app-windows:
     needs: create-release
@@ -130,7 +162,30 @@ jobs:
     environment: Relay Release
     runs-on: windows-latest
     steps:
-      # (rest of your windows steps unchanged)
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Copy tauri config for windows
+        run: |
+          cp src-tauri/tauri.windows.conf.json src-tauri/tauri.conf.json
+
+      - name: Build Windows App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.releaseId }}
+          args: --verbose --features holochain_bundled
 
   release-tauri-app-macos:
     needs: create-release
@@ -149,4 +204,26 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v3
-      # (rest of your macOS steps unchanged)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Copy tauri config for macos
+        run: |
+          cp src-tauri/tauri.macos.conf.json src-tauri/tauri.conf.json
+
+      - name: Build macOS App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.releaseId }}
+          args: --verbose --features holochain_bundled ${{ matrix.args }}
