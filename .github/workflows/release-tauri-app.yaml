@@ -28,54 +28,54 @@ jobs:
           prerelease: false
           draft: false
 
-  release-tauri-app-linux:
-    needs: create-release
-    permissions: write-all
-    environment: Relay Release
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch:
-          - x86_64
-          - aarch64
-    steps:
-      - uses: actions/checkout@v3
+release-tauri-app-linux:
+  needs: create-release
+  permissions: write-all
+  environment: Relay Release
+  strategy:
+    fail-fast: false
+    matrix:
+      include:
+        - arch: x86_64
+          runner: ubuntu-22.04
+          target: x86_64-unknown-linux-gnu
+        - arch: aarch64
+          runner: ubuntu-24.04-arm
+          target: aarch64-unknown-linux-gnu
+  runs-on: ${{ matrix.runner }}
+  steps:
+    - uses: actions/checkout@v3
 
-      - name: setup node
-        uses: actions/setup-node@v1
-        with:
-          node-version: 20
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
 
-      - name: install Rust stable
-        uses: actions-rs/toolchain@v1
-        with:
-          override: true
-          toolchain: 1.85.0
-          target: ${{ matrix.arch }}-unknown-linux-gnu
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        target: ${{ matrix.target }}
 
-      - name: install Go stable
-        uses: actions/setup-go@v4
-        with:
-          go-version: "stable"
+    - name: Install Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: stable
 
-      - name: install dependencies (ubuntu only)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            curl \
-            wget \
-            file \
-            libxdo-dev \
-            libssl-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            pkg-config \
-            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-          # Pin webkitgtk to 2.44 for tauri (amd64 only, needed for build tooling)
-          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+    - name: Install Linux deps
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          curl \
+          wget \
+          file \
+          libxdo-dev \
+          libssl-dev \
+          libayatana-appindicator3-dev \
+          librsvg2-dev \
+          pkg-config
+        # Only pin WebKitGTK on amd64
+        if [ "${{ matrix.arch }}" = "x86_64" ]; then
             mkdir -p /tmp/ubuntu-packages
             cd /tmp/ubuntu-packages
             wget https://launchpadlibrarian.net/723972773/libwebkit2gtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
@@ -91,31 +91,23 @@ jobs:
             wget https://launchpadlibrarian.net/587202140/libjpeg-turbo8_2.1.2-0ubuntu1_amd64.deb
             wget https://launchpadlibrarian.net/592959859/xdg-desktop-portal-gtk_1.14.0-1build1_amd64.deb
             sudo apt-get install -y /tmp/ubuntu-packages/*.deb
-          fi
-        env:
-          PKG_CONFIG_ALLOW_CROSS: 1
+        fi
 
-      - name: setup ARM64 linker (only for aarch64)
-        if: matrix.arch == 'aarch64'
-        run: |
-          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+    - name: Install and prepare
+      run: |
+        npm install
+        npm run setup:happ-release
 
-      - name: Install and prepare
-        run: |
-          npm install
-          npm run setup:happ-release
+    - name: Copy tauri config (desktop)
+      run: cp -f src-tauri/tauri.desktop.conf.json src-tauri/tauri.conf.json
 
-      - name: Copy variant tauri config
-        run: |
-          cp -f src-tauri/tauri.desktop.conf.json src-tauri/tauri.conf.json
-
-      - id: build-app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          releaseId: ${{ needs.create-release.outputs.releaseId }}
-          args: --verbose --features holochain_bundled --target ${{ matrix.arch }}-unknown-linux-gnu
+    - name: Build App
+      uses: tauri-apps/tauri-action@v0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        releaseId: ${{ needs.create-release.outputs.releaseId }}
+        args: --verbose --features holochain_bundled --target ${{ matrix.target }}
 
   # ---- Android job unchanged ----
   release-tauri-app-android:
