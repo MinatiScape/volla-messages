@@ -25,8 +25,8 @@ jobs:
             Android builds are distinguished as either 'rich' or 'lite':
             - The 'rich' build includes a bundled holochain conductor. It can be used on any Android device.
             - The 'lite' build relies on the holochain conductor provided by the [Android Service Runtime app](https://github.com/holochain/android-service-runtime). The Android Service Runtime app can be installed on any Android device, and will be preinstalled with Volla OS.
-          prerelease: true
-          draft: true
+          prerelease: false
+          draft: false
 
   release-tauri-app-linux:
     needs: create-release
@@ -75,24 +75,30 @@ jobs:
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
           # Pin webkitgtk to 2.44 for tauri (amd64 only, needed for build tooling)
-          mkdir -p /tmp/ubuntu-packages
-          cd /tmp/ubuntu-packages
-          wget https://launchpadlibrarian.net/723972773/libwebkit2gtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
-          wget https://launchpadlibrarian.net/723972761/libwebkit2gtk-4.1-dev_2.44.0-0ubuntu0.22.04.1_amd64.deb
-          wget https://launchpadlibrarian.net/723972770/libjavascriptcoregtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
-          wget https://launchpadlibrarian.net/723972746/libjavascriptcoregtk-4.1-dev_2.44.0-0ubuntu0.22.04.1_amd64.deb
-          wget https://launchpadlibrarian.net/723972735/gir1.2-javascriptcoregtk-4.1_2.44.0-0ubuntu0.22.04.1_amd64.deb
-          wget https://launchpadlibrarian.net/723972739/gir1.2-webkit2-4.1_2.44.0-0ubuntu0.22.04.1_amd64.deb
-          wget https://launchpadlibrarian.net/606433947/libicu70_70.1-2ubuntu1_amd64.deb
-          wget https://launchpadlibrarian.net/606433941/libicu-dev_70.1-2ubuntu1_amd64.deb
-          wget https://launchpadlibrarian.net/606433945/icu-devtools_70.1-2ubuntu1_amd64.deb
-          wget https://launchpadlibrarian.net/595623693/libjpeg8_8c-2ubuntu10_amd64.deb
-          wget https://launchpadlibrarian.net/587202140/libjpeg-turbo8_2.1.2-0ubuntu1_amd64.deb
-          wget https://launchpadlibrarian.net/592959859/xdg-desktop-portal-gtk_1.14.0-1build1_amd64.deb
-          sudo apt-get install -y /tmp/ubuntu-packages/*.deb
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+            mkdir -p /tmp/ubuntu-packages
+            cd /tmp/ubuntu-packages
+            wget https://launchpadlibrarian.net/723972773/libwebkit2gtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
+            wget https://launchpadlibrarian.net/723972761/libwebkit2gtk-4.1-dev_2.44.0-0ubuntu0.22.04.1_amd64.deb
+            wget https://launchpadlibrarian.net/723972770/libjavascriptcoregtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
+            wget https://launchpadlibrarian.net/723972746/libjavascriptcoregtk-4.1-dev_2.44.0-0ubuntu0.22.04.1_amd64.deb
+            wget https://launchpadlibrarian.net/723972735/gir1.2-javascriptcoregtk-4.1_2.44.0-0ubuntu0.22.04.1_amd64.deb
+            wget https://launchpadlibrarian.net/723972739/gir1.2-webkit2-4.1_2.44.0-0ubuntu0.22.04.1_amd64.deb
+            wget https://launchpadlibrarian.net/606433947/libicu70_70.1-2ubuntu1_amd64.deb
+            wget https://launchpadlibrarian.net/606433941/libicu-dev_70.1-2ubuntu1_amd64.deb
+            wget https://launchpadlibrarian.net/606433945/icu-devtools_70.1-2ubuntu1_amd64.deb
+            wget https://launchpadlibrarian.net/595623693/libjpeg8_8c-2ubuntu10_amd64.deb
+            wget https://launchpadlibrarian.net/587202140/libjpeg-turbo8_2.1.2-0ubuntu1_amd64.deb
+            wget https://launchpadlibrarian.net/592959859/xdg-desktop-portal-gtk_1.14.0-1build1_amd64.deb
+            sudo apt-get install -y /tmp/ubuntu-packages/*.deb
+          fi
         env:
           PKG_CONFIG_ALLOW_CROSS: 1
 
+      - name: setup ARM64 linker (only for aarch64)
+        if: matrix.arch == 'aarch64'
+        run: |
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
 
       - name: Install and prepare
         run: |
@@ -111,6 +117,7 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.releaseId }}
           args: --verbose --features holochain_bundled --target ${{ matrix.arch }}-unknown-linux-gnu
 
+  # ---- Android job unchanged ----
   release-tauri-app-android:
     permissions: write-all
     environment: Relay Release
@@ -128,31 +135,24 @@ jobs:
             label: rich
     steps:
       - uses: actions/checkout@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
-
       - name: Install Android SDK
         uses: android-actions/setup-android@v3
-
       - name: Install dependencies
         run: npm install
-
       - name: Copy tauri config for android
         run: |
           cp -f src-tauri/tauri.android.conf.json src-tauri/tauri.conf.json
-
       - name: Build Android App
         uses: tauri-apps/tauri-action@v0
         env:
@@ -161,6 +161,7 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.releaseId }}
           args: --verbose --features ${{ matrix.feature }}
 
+  # ---- Windows job unchanged ----
   release-tauri-app-windows:
     needs: create-release
     permissions: write-all
@@ -168,22 +169,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-
       - name: Install dependencies
         run: npm install
-
       - name: Copy tauri config for windows
         run: |
           cp src-tauri/tauri.windows.conf.json src-tauri/tauri.conf.json
-
       - name: Build Windows App
         uses: tauri-apps/tauri-action@v0
         env:
@@ -192,6 +188,7 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.releaseId }}
           args: --verbose --features holochain_bundled
 
+  # ---- macOS job unchanged ----
   release-tauri-app-macos:
     needs: create-release
     permissions: write-all
@@ -209,22 +206,17 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-
       - name: Install dependencies
         run: npm install
-
       - name: Copy tauri config for macos
         run: |
           cp src-tauri/tauri.macos.conf.json src-tauri/tauri.conf.json
-
       - name: Build macOS App
         uses: tauri-apps/tauri-action@v0
         env:
