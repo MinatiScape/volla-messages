@@ -28,95 +28,94 @@ jobs:
           prerelease: false
           draft: false
 
-release-tauri-app-linux:
-  needs: create-release
-  permissions: write-all
-  environment: Relay Release
-  strategy:
-    fail-fast: false
-    matrix:
-      include:
-        - arch: x86_64
-          runner: ubuntu-22.04
-          target: x86_64-unknown-linux-gnu
-        - arch: aarch64
-          runner: ubuntu-24.04-arm
-          target: aarch64-unknown-linux-gnu
-  runs-on: ${{ matrix.runner }}
-  steps:
-    - uses: actions/checkout@v3
+  release-tauri-app-linux:
+    needs: create-release
+    permissions: write-all
+    environment: Relay Release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v3
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
 
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        target: ${{ matrix.target }}
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
 
-    - name: Install Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: stable
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: stable
 
-    - name: Install Linux deps
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          curl \
-          wget \
-          file \
-          libxdo-dev \
-          libssl-dev \
-          libayatana-appindicator3-dev \
-          librsvg2-dev \
-          pkg-config
-        # Only pin WebKitGTK on amd64
-        if [ "${{ matrix.arch }}" = "x86_64" ]; then
-            mkdir -p /tmp/ubuntu-packages
-            cd /tmp/ubuntu-packages
-            wget https://launchpadlibrarian.net/723972773/libwebkit2gtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
-            wget https://launchpadlibrarian.net/723972761/libwebkit2gtk-4.1-dev_2.44.0-0ubuntu0.22.04.1_amd64.deb
-            wget https://launchpadlibrarian.net/723972770/libjavascriptcoregtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
-            wget https://launchpadlibrarian.net/723972746/libjavascriptcoregtk-4.1-dev_2.44.0-0ubuntu0.22.04.1_amd64.deb
-            wget https://launchpadlibrarian.net/723972735/gir1.2-javascriptcoregtk-4.1_2.44.0-0ubuntu0.22.04.1_amd64.deb
-            wget https://launchpadlibrarian.net/723972739/gir1.2-webkit2-4.1_2.44.0-0ubuntu0.22.04.1_amd64.deb
-            wget https://launchpadlibrarian.net/606433947/libicu70_70.1-2ubuntu1_amd64.deb
-            wget https://launchpadlibrarian.net/606433941/libicu-dev_70.1-2ubuntu1_amd64.deb
-            wget https://launchpadlibrarian.net/606433945/icu-devtools_70.1-2ubuntu1_amd64.deb
-            wget https://launchpadlibrarian.net/595623693/libjpeg8_8c-2ubuntu10_amd64.deb
-            wget https://launchpadlibrarian.net/587202140/libjpeg-turbo8_2.1.2-0ubuntu1_amd64.deb
-            wget https://launchpadlibrarian.net/592959859/xdg-desktop-portal-gtk_1.14.0-1build1_amd64.deb
-            sudo apt-get install -y /tmp/ubuntu-packages/*.deb
-        fi
+      - name: Install Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            pkg-config
+          # Only pin WebKitGTK on amd64
+          if [ "${{ matrix.arch }}" = "x86_64" ]; then
+              mkdir -p /tmp/ubuntu-packages
+              cd /tmp/ubuntu-packages
+              wget https://launchpadlibrarian.net/723972773/libwebkit2gtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
+              wget https://launchpadlibrarian.net/723972761/libwebkit2gtk-4.1-dev_2.44.0-0ubuntu0.22.04.1_amd64.deb
+              wget https://launchpadlibrarian.net/723972770/libjavascriptcoregtk-4.1-0_2.44.0-0ubuntu0.22.04.1_amd64.deb
+              wget https://launchpadlibrarian.net/723972746/libjavascriptcoregtk-4.1-dev_2.44.0-0ubuntu0.22.04.1_amd64.deb
+              wget https://launchpadlibrarian.net/723972735/gir1.2-javascriptcoregtk-4.1_2.44.0-0ubuntu0.22.04.1_amd64.deb
+              wget https://launchpadlibrarian.net/723972739/gir1.2-webkit2-4.1_2.44.0-0ubuntu0.22.04.1_amd64.deb
+              wget https://launchpadlibrarian.net/606433947/libicu70_70.1-2ubuntu1_amd64.deb
+              wget https://launchpadlibrarian.net/606433941/libicu-dev_70.1-2ubuntu1_amd64.deb
+              wget https://launchpadlibrarian.net/606433945/icu-devtools_70.1-2ubuntu1_amd64.deb
+              wget https://launchpadlibrarian.net/595623693/libjpeg8_8c-2ubuntu10_amd64.deb
+              wget https://launchpadlibrarian.net/587202140/libjpeg-turbo8_2.1.2-0ubuntu1_amd64.deb
+              wget https://launchpadlibrarian.net/592959859/xdg-desktop-portal-gtk_1.14.0-1build1_amd64.deb
+              sudo apt-get install -y /tmp/ubuntu-packages/*.deb
+          fi
 
-    - name: Install and prepare
-      run: |
-        npm install
-        npm run setup:happ-release
+      - name: Install and prepare
+        run: |
+          npm install
+          npm run setup:happ-release
 
-    - name: Copy tauri config (desktop)
-      run: cp -f src-tauri/tauri.desktop.conf.json src-tauri/tauri.conf.json
+      - name: Copy tauri config (desktop)
+        run: cp -f src-tauri/tauri.desktop.conf.json src-tauri/tauri.conf.json
 
-    - name: Build App
-      uses: tauri-apps/tauri-action@v0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        releaseId: ${{ needs.create-release.outputs.releaseId }}
-        args: --verbose --features holochain_bundled --target ${{ matrix.target }}
+      - name: Build App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.releaseId }}
+          args: --verbose --features holochain_bundled --target ${{ matrix.target }}
 
-  # ---- Android job unchanged ----
   release-tauri-app-android:
     permissions: write-all
     environment: Relay Release
     needs: 
       - release-tauri-app-linux
       - create-release
-    runs-on: 'ubuntu-22.04' 
+    runs-on: ubuntu-22.04 
     strategy:
       fail-fast: false
       matrix:
@@ -136,15 +135,14 @@ release-tauri-app-linux:
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: zulu
+          java-version: 17
       - name: Install Android SDK
         uses: android-actions/setup-android@v3
       - name: Install dependencies
         run: npm install
       - name: Copy tauri config for android
-        run: |
-          cp -f src-tauri/tauri.android.conf.json src-tauri/tauri.conf.json
+        run: cp -f src-tauri/tauri.android.conf.json src-tauri/tauri.conf.json
       - name: Build Android App
         uses: tauri-apps/tauri-action@v0
         env:
@@ -153,7 +151,6 @@ release-tauri-app-linux:
           releaseId: ${{ needs.create-release.outputs.releaseId }}
           args: --verbose --features ${{ matrix.feature }}
 
-  # ---- Windows job unchanged ----
   release-tauri-app-windows:
     needs: create-release
     permissions: write-all
@@ -170,8 +167,7 @@ release-tauri-app-linux:
       - name: Install dependencies
         run: npm install
       - name: Copy tauri config for windows
-        run: |
-          cp src-tauri/tauri.windows.conf.json src-tauri/tauri.conf.json
+        run: cp src-tauri/tauri.windows.conf.json src-tauri/tauri.conf.json
       - name: Build Windows App
         uses: tauri-apps/tauri-action@v0
         env:
@@ -180,7 +176,6 @@ release-tauri-app-linux:
           releaseId: ${{ needs.create-release.outputs.releaseId }}
           args: --verbose --features holochain_bundled
 
-  # ---- macOS job unchanged ----
   release-tauri-app-macos:
     needs: create-release
     permissions: write-all
@@ -189,9 +184,9 @@ release-tauri-app-linux:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest' # Arm Macs
+          - platform: macos-latest
             args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest' # Intel Macs
+          - platform: macos-latest
             args: '--target x86_64-apple-darwin'
     env:
       MACOSX_DEPLOYMENT_TARGET: 10.13
@@ -207,8 +202,7 @@ release-tauri-app-linux:
       - name: Install dependencies
         run: npm install
       - name: Copy tauri config for macos
-        run: |
-          cp src-tauri/tauri.macos.conf.json src-tauri/tauri.conf.json
+        run: cp src-tauri/tauri.macos.conf.json src-tauri/tauri.conf.json
       - name: Build macOS App
         uses: tauri-apps/tauri-action@v0
         env:
