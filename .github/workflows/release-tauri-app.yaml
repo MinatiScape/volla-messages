@@ -17,7 +17,7 @@ jobs:
       - id: step1
         uses: ncipollo/release-action@v1
         with:
-          tag: v0.9.69
+          tag: v0.9.70
           name: "Volla Messages ${{ github.ref_name }}"
           body: |
             See the assets to download this version and install.
@@ -40,7 +40,7 @@ jobs:
             runner: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
           - arch: aarch64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-22.04-arm
             target: aarch64-unknown-linux-gnu
     runs-on: ${{ matrix.runner }}
     steps:
